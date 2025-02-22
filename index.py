@@ -39,9 +39,8 @@ def tap(x , y):
 
 def match_and_tap(template):
     matched_image, confidence, top_left, w, h = match_template(image, template)
-    print(f"Template matching confidence: {confidence}")
-    print(f"Top left corner of the matched template: {top_left}")
-    if confidence > 0.9:
+    print(f"template: {template}, confidence: {confidence}")
+    if confidence > 0.85:
         center_x = top_left[0] + w // 2
         center_y = top_left[1] + h // 2
         tap(str(center_x), str(center_y))
@@ -52,17 +51,61 @@ def match_and_tap(template):
 
     return False
 
+def start_app(package_name):
+    subprocess.run(["adb", "shell", "monkey", "-p", package_name, "-c", "android.intent.category.LAUNCHER", "1"])
+
+def is_app_running(package_name):
+    result = subprocess.run(["adb", "shell", "pidof", package_name], capture_output=True, text=True)
+    return result.stdout.strip() != ""
+
+def is_app_in_foreground(package_name):
+    result = subprocess.run(["adb", "shell", "dumpsys", "window", "windows"], capture_output=True, text=True)
+    return package_name in result.stdout
+
+SCENARII = {
+    "quest-dokkan-story": [
+        "assets/buttons/start.jpg",
+        "assets/buttons/act-super.jpg"
+    ],
+    "event": {
+        "awaken": {
+            "le-malefique-empereur-de-l-univers": {
+                "3-derniere-puissance-maximale-de-freezer": []
+            }
+        }
+    }
+}
+
 if __name__ == "__main__":
-    test_adb_connection()    
+    test_adb_connection()
+    package_name = "com.bandainamcogames.dbzdokkanww"
+    if not is_app_running(package_name):
+        start_app(package_name)
+    elif not is_app_in_foreground(package_name):
+        print(f"{package_name} is not in the foreground.")
+    else:
+        print(f"{package_name} is already running and in the foreground.")
+
     while True:
         image = take_screenshot()
 
         templates = [
-            "assets/buttons/start.jpg", 
-            "assets/buttons/act-super.jpg", 
-            "assets/buttons/new.jpg", 
-            "assets/buttons/ok.jpg", 
-            "assets/buttons/ds.jpg"
+            "assets/buttons/are-you-sure.jpg",
+            "assets/buttons/restart.jpg",
+            "assets/buttons/start.jpg",
+            "assets/buttons/ok.jpg",
+            "assets/buttons/close.jpg",
+            "assets/buttons/rank-up.jpg",
+            "assets/buttons/ds.jpg",            
+            "assets/buttons/act-super-2.jpg",           
+            "assets/buttons/act-super.jpg",
+            "assets/buttons/3-derniere-puissance-maximale-de-freezer.jpg",
+            "assets/buttons/event-le-malefique-empereur-de-l-univers.jpg",
+            "assets/buttons/awaken.jpg",
+            "assets/buttons/event.jpg",            
+            "assets/buttons/home-start.jpg",
+            "assets/buttons/touch-start.jpg",            
+            "assets/buttons/warning.jpg",            
         ]
         matched = False
 
@@ -71,4 +114,4 @@ if __name__ == "__main__":
             if matched:
                 break
 
-        time.sleep(2)
+        time.sleep(5)
