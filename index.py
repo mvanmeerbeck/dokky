@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import time
 import datetime
+import scenarios
 
 def test_adb_connection():
     result = subprocess.run(["adb", "devices"], capture_output=True, text=True)
@@ -62,20 +63,6 @@ def is_app_in_foreground(package_name):
     result = subprocess.run(["adb", "shell", "dumpsys", "window", "windows"], capture_output=True, text=True)
     return package_name in result.stdout
 
-SCENARII = {
-    "quest-dokkan-story": [
-        "assets/buttons/start.jpg",
-        "assets/buttons/act-super.jpg"
-    ],
-    "event": {
-        "awaken": {
-            "le-malefique-empereur-de-l-univers": {
-                "3-derniere-puissance-maximale-de-freezer": []
-            }
-        }
-    }
-}
-
 if __name__ == "__main__":
     test_adb_connection()
     package_name = "com.bandainamcogames.dbzdokkanww"
@@ -86,27 +73,12 @@ if __name__ == "__main__":
     else:
         print(f"{package_name} is already running and in the foreground.")
 
+    selected_scenario = scenarios.select_scenario(scenarios.SCENARII)
+
     while True:
         image = take_screenshot()
 
-        templates = [
-            "assets/buttons/are-you-sure.jpg",
-            "assets/buttons/restart.jpg",
-            "assets/buttons/start.jpg",
-            "assets/buttons/ok.jpg",
-            "assets/buttons/close.jpg",
-            "assets/buttons/rank-up.jpg",
-            "assets/buttons/ds.jpg",            
-            "assets/buttons/act-super-2.jpg",           
-            "assets/buttons/act-super.jpg",
-            "assets/buttons/3-derniere-puissance-maximale-de-freezer.jpg",
-            "assets/buttons/event-le-malefique-empereur-de-l-univers.jpg",
-            "assets/buttons/awaken.jpg",
-            "assets/buttons/event.jpg",            
-            "assets/buttons/home-start.jpg",
-            "assets/buttons/touch-start.jpg",            
-            "assets/buttons/warning.jpg",            
-        ]
+        templates = selected_scenario
         matched = False
 
         for template in templates:
