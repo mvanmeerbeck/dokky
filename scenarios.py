@@ -1,7 +1,5 @@
 SCENARII = {
     "quest-dokkan-story": [
-        "assets/buttons/are-you-sure.jpg",
-        "assets/buttons/restart.jpg",
         "assets/buttons/start.jpg",
         "assets/buttons/ok.jpg",
         "assets/buttons/close.jpg",
@@ -9,7 +7,7 @@ SCENARII = {
         "assets/buttons/ds.jpg",
         "assets/buttons/act-super-2.jpg",
         "assets/buttons/act-super.jpg",
-        "assets/buttons/new.jpg",
+        "assets/buttons/new.jpg",        
         "assets/buttons/home-start.jpg",
         "assets/buttons/touch-start.jpg",
         "assets/buttons/warning.jpg",
