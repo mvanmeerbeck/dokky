@@ -4,6 +4,7 @@ import numpy as np
 import time
 import datetime
 import scenarios
+import keyboard  # Add this import
 
 def test_adb_connection():
     result = subprocess.run(["adb", "devices"], capture_output=True, text=True)
@@ -74,16 +75,26 @@ if __name__ == "__main__":
         print(f"{package_name} is already running and in the foreground.")
 
     selected_scenario = scenarios.select_scenario(scenarios.SCENARII)
+    paused = False  # Add this variable
 
     while True:
-        image = take_screenshot()
+        if keyboard.is_pressed('p'):  # Check if 'p' is pressed
+            paused = not paused
+            if paused:
+                print("Paused")
+            else:
+                print("Unpaused")
+            time.sleep(1)  # Prevent rapid toggling
 
-        templates = selected_scenario
-        matched = False
+        if not paused:
+            image = take_screenshot()
 
-        for template in templates:
-            matched = match_and_tap(template)
-            if matched:
-                break
+            templates = selected_scenario
+            matched = False
+
+            for template in templates:
+                matched = match_and_tap(template)
+                if matched:
+                    break
 
         time.sleep(5)

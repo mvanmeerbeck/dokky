@@ -35,7 +35,18 @@ SCENARII = {
                 ]
             }
         }
-    }
+    },
+        "z-supreme": [
+            "assets/buttons/are-you-sure.jpg",
+            "assets/buttons/ok.jpg",
+            "assets/buttons/ok2.jpg",
+            "assets/buttons/start.jpg",            
+            "assets/buttons/next-level.jpg",
+            "assets/buttons/new-enemy.jpg",
+            "assets/buttons/close.jpg",
+            "assets/buttons/rank-up.jpg",
+            "assets/buttons/ds.jpg",
+    ],
 }
 
 def select_scenario(scenarios):
