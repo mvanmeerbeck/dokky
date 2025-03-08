@@ -98,8 +98,10 @@ if __name__ == "__main__":
 
         battle_z_cancel_match = match_template(image, battle_z_cancel)
 
-        if battle_z_cancel_match['confidence'] >= 0.85:
+        if current_key != None and battle_z_cancel_match['confidence'] >= 0.95:
             print("Cancel detected")
+            cv2.imwrite(f"./tmp/cancel.jpg", image)
+
             back_to_list = True
             battle_z_items_data[current_key]['skip'] = True
             center_x = battle_z_cancel_match['top_left'][0] + battle_z_cancel_match['width'] // 2
