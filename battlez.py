@@ -26,7 +26,7 @@ def take_screenshot():
                         stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE, shell=True)
     image_bytes = pipe.stdout.read().replace(b'\r\n', b'\n')
-    gray_image = cv2.imdecode(np.fromstring(image_bytes, np.uint8), cv2.IMREAD_GRAYSCALE)
+    gray_image = cv2.imdecode(np.fromstring(image_bytes, np.uint8), cv2.IMREAD_COLOR)
 
     cv2.imwrite(name, gray_image)
 
@@ -55,16 +55,59 @@ def enhance_contrast(image):
 
     return thresh
 
+def reduce_noise(image):
+    return cv2.fastNlMeansDenoising(image, None, 30, 7, 21)
+
+def remove_specific_background(image, lower_color, upper_color):
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, lower_color, upper_color)
+    mask_inv = cv2.bitwise_not(mask)
+    image[mask != 0] = [0, 0, 0]
+    return image
+
+def remove_color_background(image):
+    lower_red1 = np.array([0, 50, 50])
+    upper_red1 = np.array([10, 255, 255])
+    image = remove_specific_background(image, lower_red1, upper_red1)
+    
+    lower_red2 = np.array([160, 50, 50])
+    upper_red2 = np.array([180, 255, 255])
+    image = remove_specific_background(image, lower_red2, upper_red2)
+    
+    lower_red3 = np.array([10, 50, 50])
+    upper_red3 = np.array([20, 255, 255])
+    image = remove_specific_background(image, lower_red3, upper_red3)
+    
+    lower_red4 = np.array([170, 50, 50])
+    upper_red4 = np.array([180, 255, 255])
+    image = remove_specific_background(image, lower_red4, upper_red4)
+    
+    lower_red4 = np.array([12, 167, 250])
+    upper_red4 = np.array([180, 255, 255])
+    image = remove_specific_background(image, lower_red4, upper_red4)
+    
+    lower_yellow = np.array([15, 50, 50])
+    upper_yellow = np.array([35, 255, 255])
+    image = remove_specific_background(image, lower_yellow, upper_yellow)
+    
+    return image
+
 def crop_text_region(image):
     blurred = cv2.GaussianBlur(image, (5, 5), 0)
     edged = cv2.Canny(blurred, 50, 200, 255)
     
     contours, _ = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    print(f"Contours: {len(contours)}")
     if contours:
-        c = max(contours, key=cv2.contourArea)
-        x, y, w, h = cv2.boundingRect(c)
-        # Add padding of 10 pixels around the detected text region
-        padding = 10
+        x, y, w, h = cv2.boundingRect(contours[0])
+        for c in contours:
+            x1, y1, w1, h1 = cv2.boundingRect(c)
+            x = min(x, x1)
+            y = min(y, y1)
+            w = max(w, x1 + w1 - x)
+            h = max(h, y1 + h1 - y)
+
+        padding = 2
         x = max(0, x - padding)
         y = max(0, y - padding)
         w = min(image.shape[1] - x, w + 2 * padding)
@@ -74,13 +117,21 @@ def crop_text_region(image):
     else:
         return image
 
-def detect_numbers(image):
-    cropped_image = crop_text_region(image)
-    enhanced_image = enhance_contrast(cropped_image)
-    cv2.imwrite(f"./tmp/enhanced.jpg", enhanced_image)
-    text = pytesseract.image_to_string(enhanced_image, config="--psm 6 outputbase digits")
+def detect_numbers(image, colored=False):
+    cv2.imwrite(f"./tmp/enhanced0.jpg", image)
+    image = crop_text_region(image)
+    if colored:
+        image = remove_color_background(image)
+        cv2.imwrite(f"./tmp/enhanced1b.jpg", image)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    cv2.imwrite(f"./tmp/enhanced1.jpg", image)
+    image = enhance_contrast(image)
+    cv2.imwrite(f"./tmp/enhanced2.jpg", image)
+    image = reduce_noise(image)
+    cv2.imwrite(f"./tmp/enhanced3.jpg", image)
+    text = pytesseract.image_to_string(image, config="--psm 6 outputbase digits")
     print(f"Detected text: {text}")
-    
+
     try:
         text = int(text)
     except ValueError:  
@@ -128,13 +179,15 @@ if __name__ == "__main__":
         print("Failed to connect to ADB.")
 
     current_item  = None
+    current_key  = None
     back_to_list = False
     check_enemy_level = True
 
     while True:
         print(current_item)
         time.sleep(2)
-        image = take_screenshot()
+        image_color = take_screenshot()
+        image = cv2.cvtColor(image_color, cv2.COLOR_BGR2GRAY)
         matched = False
 
         battle_z_loading_match = match_template(image, battle_z_loading)
@@ -142,12 +195,6 @@ if __name__ == "__main__":
             print("Loading...")
             time.sleep(2)
             continue
-
-        if back_to_list:
-            battle_z_item_back_match = match_and_tap(image, battle_z_item_back)
-            if battle_z_item_back_match:
-                back_to_list = False
-                continue
 
         battle_z_cancel_match = match_template(image, battle_z_cancel)
 
@@ -159,30 +206,6 @@ if __name__ == "__main__":
             tap(str(center_x), str(center_y))
             continue
 
-        if check_enemy_level == True:
-            battle_z_item_enemy_level_label_match = match_template(image, battle_z_item_enemy_level_label)
-
-            if battle_z_item_enemy_level_label_match['confidence'] >= 0.85:
-                print("On the Battle-Z Infos Combat screen")
-
-                battle_z_item_enemy_level = crop_image(image, (575,680), 70, 50)
-                cv2.imwrite(f"./tmp/battle-z-item-enemy-level.jpg", battle_z_item_enemy_level)
-                
-                level = detect_numbers(battle_z_item_enemy_level)
-                print(f"Level: {level}")
-
-                if current_item == None or level >= current_item['level_target']:
-                    print("retour list")
-                    back_to_list = True
-                
-                check_enemy_level = False                    
-                continue
-            
-            battle_z_item_infos_combat_match = match_and_tap(image, battle_z_item_infos_combat)
-
-            if battle_z_item_infos_combat_match:
-                continue
-
         for template in battle_z_item_templates:
             matched = match_and_tap(image, template)
 
@@ -192,10 +215,23 @@ if __name__ == "__main__":
         if matched:
             continue
 
-        battle_z_item_new_enemy_match = match_and_tap(image, battle_z_item_new_enemy)
+        battle_z_item_new_enemy_match = match_template(image, battle_z_item_new_enemy)
 
-        if battle_z_item_new_enemy_match:
-            check_enemy_level = True
+        if battle_z_item_new_enemy_match['confidence'] >= 0.85:
+            battle_z_item_level = crop_image(image_color, (435,1540), 220, 105)
+            cv2.imwrite(f"./tmp/item-level.jpg", battle_z_item_level)
+
+            item_level = detect_numbers(battle_z_item_level, True)
+
+            if item_level != None and current_item != None and current_item['skip'] == False and item_level < current_item['level_target']:
+                print("New enemy detected")
+                center_x = battle_z_item_new_enemy_match['top_left'][0] + battle_z_item_new_enemy_match['width'] // 2
+                center_y = battle_z_item_new_enemy_match['top_left'][1] + battle_z_item_new_enemy_match['height'] // 2
+                tap(str(center_x), str(center_y))
+            else:
+                print("Back to list")
+                match_and_tap(image, battle_z_item_back)
+
             continue
 
         battle_z_list_match = match_template(image, battle_z_list)
@@ -217,7 +253,7 @@ if __name__ == "__main__":
 
                 level = detect_numbers(level_image)
 
-                if item_data['skip'] == False and level < item_data['level_target']:
+                if level != None and item_data['skip'] == False and level < item_data['level_target']:
                     print(f"Go farm {item_data['description']}, level {level} < {item_data['level_target']}")
                     current_item = item_data
                     current_key = item_key
