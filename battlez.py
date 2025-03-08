@@ -8,6 +8,7 @@ import keyboard
 import pytesseract
 from battlezdata import (
     battle_z_loading,
+    battle_z_cancel,
     battle_z_item_back,
     battle_z_item_enemy_level_label,
     battle_z_item_infos_combat,
@@ -105,7 +106,7 @@ def get_battle_z_item_by_height(height):
     index = height // 117
     keys = list(battle_z_items_data.keys())
     if index < len(keys):
-        return battle_z_items_data[keys[index]]
+        return keys[index], battle_z_items_data[keys[index]]
     return None
 
 def match_and_tap(image, template):
@@ -131,6 +132,7 @@ if __name__ == "__main__":
     check_enemy_level = True
 
     while True:
+        print(current_item)
         time.sleep(2)
         image = take_screenshot()
         matched = False
@@ -146,6 +148,16 @@ if __name__ == "__main__":
             if battle_z_item_back_match:
                 back_to_list = False
                 continue
+
+        battle_z_cancel_match = match_template(image, battle_z_cancel)
+
+        if battle_z_cancel_match['confidence'] >= 0.85:
+            back_to_list = True
+            battle_z_items_data[current_key]['skip'] = True
+            center_x = battle_z_cancel_match['top_left'][0] + battle_z_cancel_match['width'] // 2
+            center_y = battle_z_cancel_match['top_left'][1] + battle_z_cancel_match['height'] // 2
+            tap(str(center_x), str(center_y))
+            continue
 
         if check_enemy_level == True:
             battle_z_item_enemy_level_label_match = match_template(image, battle_z_item_enemy_level_label)
@@ -197,7 +209,7 @@ if __name__ == "__main__":
             print(f"Battle-Z items confidence: {battle_z_list_item_image_match['confidence']} at {battle_z_list_item_image_match['top_left']} with size {battle_z_list_item_image_match['width']}x{battle_z_list_item_image_match['height']}")
 
             if battle_z_list_item_image_match['confidence'] > 0.95:
-                item_data = get_battle_z_item_by_height(battle_z_list_item_image_match['top_left'][1])
+                item_key, item_data = get_battle_z_item_by_height(battle_z_list_item_image_match['top_left'][1])
                 print(f"Matched item: {item_data['description']} with confidence {battle_z_list_item_image_match['confidence']}")
 
                 level_image = crop_image(image, (910,570), 100, 58)
@@ -205,11 +217,12 @@ if __name__ == "__main__":
 
                 level = detect_numbers(level_image)
 
-                if level < item_data['level_target']:
+                if item_data['skip'] == False and level < item_data['level_target']:
                     print(f"Go farm {item_data['description']}, level {level} < {item_data['level_target']}")
                     current_item = item_data
+                    current_key = item_key
                     tap(str(254), str(1561))
                 else:
-                    print(f"Level {level} >= {item_data['level_target']}, skipping")
+                    print(f"Skip: {item_data['skip']}, Current level {level}, Target level {item_data['level_target']} => skipping")
                     swipe("254", "1561", "254", "1444")
             continue
