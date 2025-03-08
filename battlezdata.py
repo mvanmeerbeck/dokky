@@ -11,8 +11,6 @@ def merge_images(images):
         merged_image[current_y:current_y + image.shape[0], :image.shape[1]] = image
         current_y += image.shape[0]
 
-    cv2.imwrite(f"./tmp/battle-z-items.jpg", merged_image)
-
     return merged_image
 
 battle_z_list = cv2.imread('assets/battle-z/list.jpg', 0)
@@ -1000,6 +998,7 @@ battle_z_items_data = {
 }
 battle_z_items = [data['image'] for data in battle_z_items_data.values()]
 battle_z_items_image = merge_images(battle_z_items)
+cv2.imwrite(f"./tmp/battle-z-items.jpg", battle_z_items_image)
 battle_z_item = cv2.imread('assets/battle-z/item.jpg', 0)
 battle_z_item_infos_combat = cv2.imread('assets/battle-z/infos-combat.jpg', 0)
 battle_z_item_enemy_level_label = cv2.imread('assets/battle-z/enemy-level-label.jpg', 0)
@@ -1015,3 +1014,15 @@ battle_z_item_templates = [
     cv2.imread("assets/battle-z/rank-up.jpg", 0),
     cv2.imread("assets/battle-z/ds.jpg", 0),
 ]
+
+battle_z_item_level = []
+for i in range(1, 32):
+    battle_z_item_level.append(cv2.imread(f"assets/battle-z/item-level/{i}.jpg", 0))
+battle_z_item_level_image = merge_images(battle_z_item_level)
+cv2.imwrite(f"./tmp/battle-z-item-level.jpg", battle_z_item_level_image)
+
+battle_z_list_level = []
+for i in range(1, 32):
+    battle_z_list_level.append(cv2.imread(f"assets/battle-z/list-level/{i}.jpg", 0))
+battle_z_list_level_image = merge_images(battle_z_list_level)
+cv2.imwrite(f"./tmp/battle-z-list-level.jpg", battle_z_list_level_image)
