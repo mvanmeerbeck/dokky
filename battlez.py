@@ -85,7 +85,6 @@ if __name__ == "__main__":
     back_to_list = False
 
     while True:
-        print(current_item)
         time.sleep(2)
         image = take_screenshot()
         matched = False
