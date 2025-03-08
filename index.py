@@ -4,7 +4,6 @@ import numpy as np
 import time
 import datetime
 import scenarios
-import keyboard  # Add this import
 
 def test_adb_connection():
     result = subprocess.run(["adb", "devices"], capture_output=True, text=True)
@@ -42,7 +41,7 @@ def tap(x , y):
 def match_and_tap(template):
     matched_image, confidence, top_left, w, h = match_template(image, template)
     print(f"template: {template}, confidence: {confidence}")
-    if confidence > 0.81:
+    if confidence > 0.85:
         center_x = top_left[0] + w // 2
         center_y = top_left[1] + h // 2
         tap(str(center_x), str(center_y))
@@ -75,26 +74,16 @@ if __name__ == "__main__":
         print(f"{package_name} is already running and in the foreground.")
 
     selected_scenario = scenarios.select_scenario(scenarios.SCENARII)
-    paused = False  # Add this variable
 
     while True:
-        if keyboard.is_pressed('p'):  # Check if 'p' is pressed
-            paused = not paused
-            if paused:
-                print("Paused")
-            else:
-                print("Unpaused")
-            time.sleep(1)  # Prevent rapid toggling
+        image = take_screenshot()
 
-        if not paused:
-            image = take_screenshot()
+        templates = selected_scenario
+        matched = False
 
-            templates = selected_scenario
-            matched = False
+        for template in templates:
+            matched = match_and_tap(template)
+            if matched:
+                break
 
-            for template in templates:
-                matched = match_and_tap(template)
-                if matched:
-                    break
-
-        time.sleep(4)
+        time.sleep(5)
