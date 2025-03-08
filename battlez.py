@@ -6,20 +6,17 @@ import datetime
 import scenarios
 import keyboard
 import pytesseract
-
-def merge_images(images):
-    total_height = sum(image.shape[0] for image in images)
-    max_width = max(image.shape[1] for image in images)
-    merged_image = np.zeros((total_height, max_width), dtype=np.uint8)
-
-    current_y = 0
-    for image in images:
-        merged_image[current_y:current_y + image.shape[0], :image.shape[1]] = image
-        current_y += image.shape[0]
-
-    cv2.imwrite(f"./tmp/battle-z-items.jpg", merged_image)
-
-    return merged_image
+from battlezdata import (
+    battle_z_loading,
+    battle_z_item_back,
+    battle_z_item_enemy_level_label,
+    battle_z_item_infos_combat,
+    battle_z_item_templates,
+    battle_z_item_new_enemy,
+    battle_z_list,
+    battle_z_items_image,
+    battle_z_items_data
+)
 
 def take_screenshot():
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -62,7 +59,13 @@ def detect_numbers(image):
     cv2.imwrite(f"./tmp/enhanced.jpg", enhanced_image)
     text = pytesseract.image_to_string(enhanced_image, config="--psm 6 outputbase digits")
     print(f"Detected text: {text}")
-    return int(text)
+    
+    try:
+        text = int(text)
+    except ValueError:  
+        text = None
+
+    return text
 
 def crop_image(image, top_left, width, height):
     cropped_image = image[top_left[1]:top_left[1] + height, top_left[0]:top_left[0] + width]
@@ -96,57 +99,6 @@ def match_and_tap(image, template):
         return True
     return False
 
-battle_z_list = cv2.imread('assets/battle-z/list.jpg', 0)
-battle_z_items_data = {
-    'saga-rivaux-du-destin-8': {
-        'image': cv2.imread('assets/battle-z/saga-rivaux-du-destin-8.jpg', 0),
-        'level_target': 31,
-        'description': 'Saga Rivaux du Destin 8'
-    },
-    'vegeta-super-saiyan-3': {
-        'image': cv2.imread('assets/battle-z/vegeta-super-saiyan-3.jpg', 0),
-        'level_target': 31,
-        'description': 'Vegeta Super Saiyan 3'
-    },
-    'son-goku-super-saiyan-4-vegeta-super-saiyan-4': {
-        'image': cv2.imread('assets/battle-z/son-goku-super-saiyan-4-vegeta-super-saiyan-4.jpg', 0),
-        'level_target': 11,
-        'description': 'Son Goku Super Saiyan 4 & Vegeta Super Saiyan 4'
-    },
-    'son-goku-super-saiyan-divin-vegeta-super-saiyan-divin': {
-        'image': cv2.imread('assets/battle-z/son-goku-super-saiyan-divin-vegeta-super-saiyan-divin.jpg', 0),
-        'level_target': 11,
-        'description': 'Son Goku Super Saiyan Divin & Vegeta Super Saiyan Divin'
-    },
-    'bataille-miraculeuse': {
-        'image': cv2.imread('assets/battle-z/bataille-miraculeuse.jpg', 0),
-        'level_target': 11,
-        'description': 'Bataille miraculeuse'
-    },
-    'fusion-du-dieu-et-du-demon-piccolo.jpg': {
-        'image': cv2.imread('assets/battle-z/fusion-du-dieu-et-du-demon-piccolo.jpg', 0),
-        'level_target': 31,
-        'description': 'Fusion du dieu et du demon Piccolo'
-    }
-}
-battle_z_items = [data['image'] for data in battle_z_items_data.values()]
-battle_z_items_image = merge_images(battle_z_items)
-battle_z_item = cv2.imread('assets/battle-z/item.jpg', 0)
-battle_z_item_infos_combat = cv2.imread('assets/battle-z/infos-combat.jpg', 0)
-battle_z_item_enemy_level = cv2.imread('assets/battle-z/enemy-level.jpg', 0)
-battle_z_item_new_enemy = cv2.imread('assets/battle-z/new-enemy.jpg', 0)
-battle_z_item_back = cv2.imread('assets/battle-z/back.jpg', 0)
-battle_z_item_templates = [
-    cv2.imread("assets/battle-z/are-you-sure.jpg", 0),
-    cv2.imread("assets/battle-z/ok.jpg", 0),
-    cv2.imread("assets/battle-z/ok2.jpg", 0),
-    cv2.imread("assets/battle-z/start.jpg", 0),
-    cv2.imread("assets/battle-z/next-level.jpg", 0),
-    cv2.imread("assets/battle-z/close.jpg", 0),
-    cv2.imread("assets/battle-z/rank-up.jpg", 0),
-    cv2.imread("assets/battle-z/ds.jpg", 0),
-]
-
 if __name__ == "__main__":
     result = subprocess.run(["adb", "devices"], capture_output=True, text=True)
     if "List of devices attached" in result.stdout:
@@ -159,8 +111,15 @@ if __name__ == "__main__":
     check_enemy_level = True
 
     while True:
+        time.sleep(2)
         image = take_screenshot()
         matched = False
+
+        battle_z_loading_match = match_template(image, battle_z_loading)
+        if battle_z_loading_match['confidence'] >= 0.85:
+            print("Loading...")
+            time.sleep(2)
+            continue
 
         if back_to_list:
             battle_z_item_back_match = match_and_tap(image, battle_z_item_back)
@@ -169,10 +128,9 @@ if __name__ == "__main__":
                 continue
 
         if check_enemy_level == True:
-            print("Checking enemy level")
-            battle_z_item_enemy_level_match = match_template(image, battle_z_item_enemy_level)
-            
-            if battle_z_item_enemy_level_match['confidence'] >= 0.95:
+            battle_z_item_enemy_level_label_match = match_template(image, battle_z_item_enemy_level_label)
+
+            if battle_z_item_enemy_level_label_match['confidence'] >= 0.85:
                 print("On the Battle-Z Infos Combat screen")
 
                 battle_z_item_enemy_level = crop_image(image, (575,680), 70, 50)
@@ -197,7 +155,10 @@ if __name__ == "__main__":
             matched = match_and_tap(image, template)
 
             if matched:
-                continue
+                break
+
+        if matched:
+            continue
 
         battle_z_item_new_enemy_match = match_and_tap(image, battle_z_item_new_enemy)
 
@@ -211,7 +172,6 @@ if __name__ == "__main__":
             print("On the Battle-Z list screen")
 
             battle_z_list_item_image = crop_image(image, (254,1561), 755, 117)
-            cv2.imwrite(f"./tmp/battle-z-item.jpg", battle_z_list_item_image)
 
             battle_z_list_item_image_match = match_template(battle_z_list_item_image, battle_z_items_image)
             print(f"Battle-Z items confidence: {battle_z_list_item_image_match['confidence']} at {battle_z_list_item_image_match['top_left']} with size {battle_z_list_item_image_match['width']}x{battle_z_list_item_image_match['height']}")
