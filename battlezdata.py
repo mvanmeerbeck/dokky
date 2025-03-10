@@ -1004,12 +1004,12 @@ battle_z_item_infos_combat = cv2.imread('assets/battle-z/infos-combat.jpg', 0)
 battle_z_item_enemy_level_label = cv2.imread('assets/battle-z/enemy-level-label.jpg', 0)
 battle_z_item_new_enemy = cv2.imread('assets/battle-z/new-enemy.jpg', 0)
 battle_z_item_back = cv2.imread('assets/battle-z/back.jpg', 0)
+battle_z_item_next_level = cv2.imread('assets/battle-z/next-level.jpg', 0)
 battle_z_item_templates = [
     cv2.imread("assets/battle-z/are-you-sure.jpg", 0),
     cv2.imread("assets/battle-z/ok.jpg", 0),
     cv2.imread("assets/battle-z/ok2.jpg", 0),
     cv2.imread("assets/battle-z/start.jpg", 0),
-    cv2.imread("assets/battle-z/next-level.jpg", 0),
     cv2.imread("assets/battle-z/close.jpg", 0),
     cv2.imread("assets/battle-z/rank-up.jpg", 0),
     cv2.imread("assets/battle-z/ds.jpg", 0),

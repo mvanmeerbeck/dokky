@@ -12,8 +12,11 @@ from battlezdata import (
     battle_z_items_image,
     battle_z_items_data,
     battle_z_item_level_image,
-    battle_z_list_level_image
+    battle_z_list_level_image,
+    battle_z_item_next_level
 )
+
+# TODO si confidence < 0.9 back to list si level > 31
 
 def take_screenshot():
     name = f"./tmp/screenshot.jpg"
@@ -82,10 +85,9 @@ if __name__ == "__main__":
 
     current_item  = None
     current_key  = None
-    back_to_list = False
 
     while True:
-        time.sleep(2)
+        time.sleep(1)
         image = take_screenshot()
         matched = False
 
@@ -101,7 +103,6 @@ if __name__ == "__main__":
             print("Cancel detected")
             cv2.imwrite(f"./tmp/cancel.jpg", image)
 
-            back_to_list = True
             battle_z_items_data[current_key]['skip'] = True
             center_x = battle_z_cancel_match['top_left'][0] + battle_z_cancel_match['width'] // 2
             center_y = battle_z_cancel_match['top_left'][1] + battle_z_cancel_match['height'] // 2
@@ -117,6 +118,16 @@ if __name__ == "__main__":
         if matched:
             continue
 
+        battle_z_item_next_level_match = match_template(image, battle_z_item_next_level)
+        if battle_z_item_next_level_match['confidence'] >= 0.85:
+            if current_item != None:
+                current_item['skip'] = False
+            center_x = battle_z_item_next_level_match['top_left'][0] + battle_z_item_next_level_match['width'] // 2
+            center_y = battle_z_item_next_level_match['top_left'][1] + battle_z_item_next_level_match['height'] // 2
+            tap(str(center_x), str(center_y))
+            time.sleep(1)
+            continue
+
         battle_z_item_new_enemy_match = match_template(image, battle_z_item_new_enemy)
 
         if battle_z_item_new_enemy_match['confidence'] >= 0.85:
@@ -128,7 +139,7 @@ if __name__ == "__main__":
             print(battle_z_item_level_match)
             print(f"Item level: {item_level}")            
 
-            if current_item != None and current_item['skip'] == False and item_level < current_item['level_target']:
+            if current_item != None and current_item['skip'] == False and item_level < current_item['level_target'] and battle_z_item_level_match['confidence'] >= 0.95:
                 print("New enemy detected")
                 center_x = battle_z_item_new_enemy_match['top_left'][0] + battle_z_item_new_enemy_match['width'] // 2
                 center_y = battle_z_item_new_enemy_match['top_left'][1] + battle_z_item_new_enemy_match['height'] // 2
@@ -161,7 +172,7 @@ if __name__ == "__main__":
                 print(battle_z_list_level_match)
                 print(f"Item level: {list_level}")
 
-                if item_data['skip'] == False and list_level < item_data['level_target']:
+                if item_data['skip'] == False and list_level < item_data['level_target'] and battle_z_list_level_match['confidence'] >= 0.95:
                     print(f"Go farm {item_data['description']}, level {list_level} < {item_data['level_target']}")
                     current_item = item_data
                     current_key = item_key
