@@ -41,7 +41,7 @@ def tap(x , y):
 def match_and_tap(template):
     matched_image, confidence, top_left, w, h = match_template(image, template)
     print(f"template: {template}, confidence: {confidence}")
-    if confidence > 0.85:
+    if confidence > 0.80:
         center_x = top_left[0] + w // 2
         center_y = top_left[1] + h // 2
         tap(str(center_x), str(center_y))

@@ -139,7 +139,7 @@ if __name__ == "__main__":
             print(battle_z_item_level_match)
             print(f"Item level: {item_level}")            
 
-            if current_item != None and current_item['skip'] == False and item_level < current_item['level_target'] and battle_z_item_level_match['confidence'] >= 0.95:
+            if current_item != None and current_item['skip'] == False and item_level < current_item['level_target'] and battle_z_item_level_match['confidence'] >= 0.93:
                 print("New enemy detected")
                 center_x = battle_z_item_new_enemy_match['top_left'][0] + battle_z_item_new_enemy_match['width'] // 2
                 center_y = battle_z_item_new_enemy_match['top_left'][1] + battle_z_item_new_enemy_match['height'] // 2
@@ -160,7 +160,7 @@ if __name__ == "__main__":
             battle_z_list_item_image_match = match_template(battle_z_list_item_image, battle_z_items_image)
             print(f"Battle-Z items confidence: {battle_z_list_item_image_match['confidence']} at {battle_z_list_item_image_match['top_left']} with size {battle_z_list_item_image_match['width']}x{battle_z_list_item_image_match['height']}")
 
-            if battle_z_list_item_image_match['confidence'] > 0.95:
+            if battle_z_list_item_image_match['confidence'] > 0.90:
                 item_key, item_data = get_battle_z_item_by_height(battle_z_list_item_image_match['top_left'][1])
                 print(f"Matched item: {item_data['description']} with confidence {battle_z_list_item_image_match['confidence']}")
 
@@ -172,7 +172,7 @@ if __name__ == "__main__":
                 print(battle_z_list_level_match)
                 print(f"Item level: {list_level}")
 
-                if item_data['skip'] == False and list_level < item_data['level_target'] and battle_z_list_level_match['confidence'] >= 0.95:
+                if item_data['skip'] == False and list_level < item_data['level_target'] and battle_z_list_level_match['confidence'] >= 0.75:
                     print(f"Go farm {item_data['description']}, level {list_level} < {item_data['level_target']}")
                     current_item = item_data
                     current_key = item_key
@@ -180,4 +180,5 @@ if __name__ == "__main__":
                 else:
                     print(f"Skip: {item_data['skip']}, Current level {list_level}, Target level {item_data['level_target']} => skipping")
                     swipe("254", "1561", "254", "1444")
+                    time.sleep(1)
             continue
