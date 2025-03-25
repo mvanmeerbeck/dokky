@@ -6,12 +6,13 @@ from challengedata import (
     challenge_item_templates,
     challenge_list_item,
     histoire_sans_fin_template,
+    bataille_boss_template,
+    super_battle_road_template,
+    assemblee_dieux_template,
+    esprit_combatif_template,
+    objets_template,
     zenis_template
 )
-
-zenis_template = cv2.imread("assets/challenge/zenis.jpg", cv2.IMREAD_GRAYSCALE)
-
-objets_template = cv2.imread('./assets/challenge/objets.jpg', cv2.IMREAD_GRAYSCALE)
 
 def take_screenshot():
     name = f"./tmp/screenshot.jpg"
@@ -100,8 +101,12 @@ if __name__ == "__main__":
             continue
 
         histoire_sans_fin_match = match_template(image, histoire_sans_fin_template)
+        bataille_boss_match = match_template(image, bataille_boss_template)
+        super_battle_road_match = match_template(image, super_battle_road_template)
+        assemblee_dieux_match = match_template(image, assemblee_dieux_template)
+        esprit_combatif_match = match_template(image, esprit_combatif_template)
 
-        if histoire_sans_fin_match['confidence'] >= 0.95:
+        if histoire_sans_fin_match['confidence'] >= 0.95 or bataille_boss_match['confidence'] >= 0.95 or super_battle_road_match['confidence'] >= 0.95 or assemblee_dieux_match['confidence'] >= 0.95 or esprit_combatif_match['confidence'] >= 0.95:
             print("Histoire sans fin found!")
             challenge_list_item_match = match_template(image, challenge_list_item)
 
